@@ -46,11 +46,6 @@ re-run.
 
 ## Step 3 — Get the code and stand up the infrastructure
 
-> **Prefer not to use Terraform?** The same infrastructure, resource for
-> resource, as plain `gcloud`/`bq` commands:
-> [`SETUP_WITHOUT_TERRAFORM.md`](SETUP_WITHOUT_TERRAFORM.md). Do that instead of
-> this step, then rejoin at Step 4.
-
 ```bash
 git clone https://github.com/nnaderzad/goride-pubsub-demo.git
 cd goride-pubsub-demo/terraform
