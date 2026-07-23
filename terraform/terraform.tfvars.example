@@ -1,0 +1,9 @@
+# Copy to terraform.tfvars and adjust if needed.
+#   cp terraform.tfvars.example terraform.tfvars
+#
+# In Cloud Shell you can usually leave `project` blank — Terraform picks up the
+# active project from GOOGLE_CLOUD_PROJECT.
+
+# project    = "my-pubsub-demo-123456"
+# location   = "us-central1"
+# topic_name = "rides"
