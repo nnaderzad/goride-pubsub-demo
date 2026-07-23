@@ -16,3 +16,6 @@ terraform.rc
 
 # macOS
 .DS_Store
+
+# Local environment (project ID etc.) - never committed
+.env
