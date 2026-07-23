@@ -1,19 +1,19 @@
 # =============================================================================
-# Cloud Pub/Sub Tech Spotlight — Demo Infrastructure
+# Cloud Pub/Sub Tech Spotlight - Demo Infrastructure
 # -----------------------------------------------------------------------------
 # The rides story from the deck, as real infrastructure:
 #
-#   Trip service ──▶ rides topic ──┬─▶ match-sub     (pull)   Driver matching
-#                   (Avro schema)  ├─▶ billing-sub   (pull)   Payments
-#                                  └─▶ analytics-sub (BigQuery) ─▶ rides_analytics.trip_events
+#   Trip service ──> rides topic ──┬─> match-sub     (pull)   Driver matching
+#                   (Avro schema)  ├─> billing-sub   (pull)   Payments
+#                                  └─> analytics-sub (BigQuery) ─> rides_analytics.trip_events
 #
-#   Failed messages on match-sub ──▶ rides-dead-letter ──▶ rides-dead-letter-sub
+#   Failed messages on match-sub ──> rides-dead-letter ──> rides-dead-letter-sub
 #
 # One `terraform apply` stands the whole thing up; one `terraform destroy` tears
 # it down. Runs in Google Cloud Shell (Terraform pre-installed, ADC automatic).
 # =============================================================================
 
-# Resolves the active project — used for the pubsub service-agent email, the
+# Resolves the active project - used for the pubsub service-agent email, the
 # BigQuery subscription target, and the console URLs in outputs.tf.
 data "google_project" "project" {
   project_id = var.project != "" ? var.project : null
@@ -30,7 +30,7 @@ locals {
 }
 
 # -----------------------------------------------------------------------------
-# Schema — the format contract for every message on the topic (deck: "Schema").
+# Schema - the format contract for every message on the topic (deck: "Schema").
 # AVRO with JSON encoding: you publish plain JSON, Pub/Sub validates it against
 # this schema and rejects anything that doesn't conform.
 # -----------------------------------------------------------------------------
@@ -41,7 +41,7 @@ resource "google_pubsub_schema" "trip_event" {
 }
 
 # -----------------------------------------------------------------------------
-# Topic — the named feed trip events are published to (deck: "Topic").
+# Topic - the named feed trip events are published to (deck: "Topic").
 # -----------------------------------------------------------------------------
 resource "google_pubsub_topic" "rides" {
   name = var.topic_name
@@ -67,11 +67,11 @@ resource "google_pubsub_topic" "dead_letter" {
 resource "google_pubsub_subscription" "dead_letter" {
   name                       = "${var.topic_name}-dead-letter-sub"
   topic                      = google_pubsub_topic.dead_letter.id
-  message_retention_duration = "604800s" # 7 days — inspect failures at your leisure
+  message_retention_duration = "604800s" # 7 days - inspect failures at your leisure
 }
 
 # -----------------------------------------------------------------------------
-# match-sub — pull subscription for driver matching.
+# match-sub - pull subscription for driver matching.
 # Carries a dead-letter policy so a poison message can't block the pipeline.
 # -----------------------------------------------------------------------------
 resource "google_pubsub_subscription" "match" {
@@ -91,7 +91,7 @@ resource "google_pubsub_subscription" "match" {
 }
 
 # -----------------------------------------------------------------------------
-# billing-sub — a SEPARATE pull subscription for payments.
+# billing-sub - a SEPARATE pull subscription for payments.
 # This is the fan-out point of the demo: match-sub and billing-sub each receive
 # their OWN copy of every published message (deck: "Every subscription gets a copy").
 # -----------------------------------------------------------------------------
@@ -102,7 +102,7 @@ resource "google_pubsub_subscription" "billing" {
 }
 
 # -----------------------------------------------------------------------------
-# BigQuery landing zone — the visible payoff (deck: "One trip → one smart
+# BigQuery landing zone - the visible payoff (deck: "One trip → one smart
 # notification", the BigQuery hop). Nothing is copied twice: the analytics
 # subscription streams events straight into this table.
 # -----------------------------------------------------------------------------
@@ -120,7 +120,7 @@ resource "google_bigquery_table" "trip_events" {
 }
 
 # -----------------------------------------------------------------------------
-# IAM — let the Pub/Sub service agent write to BigQuery.
+# IAM - let the Pub/Sub service agent write to BigQuery.
 # Per Google's docs, a BigQuery subscription requires the Pub/Sub service agent
 # to hold bigquery.dataEditor (+ metadataViewer to read the table schema).
 # -----------------------------------------------------------------------------
@@ -137,7 +137,7 @@ resource "google_project_iam_member" "pubsub_bq_metadata" {
 }
 
 # -----------------------------------------------------------------------------
-# analytics-sub — the BigQuery subscription. Pub/Sub delivers matching messages
+# analytics-sub - the BigQuery subscription. Pub/Sub delivers matching messages
 # directly into the table (deck: "Export" delivery type). use_topic_schema maps
 # the Avro fields to the table columns.
 # -----------------------------------------------------------------------------
@@ -162,7 +162,7 @@ resource "google_pubsub_subscription" "analytics" {
 }
 
 # -----------------------------------------------------------------------------
-# IAM — let the Pub/Sub service agent operate the dead-letter flow.
+# IAM - let the Pub/Sub service agent operate the dead-letter flow.
 # It must be able to PUBLISH to the dead-letter topic and SUBSCRIBE (ack) on the
 # source subscription. Missing these = dead-lettering silently doesn't work.
 # -----------------------------------------------------------------------------

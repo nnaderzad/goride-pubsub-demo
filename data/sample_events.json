@@ -1,17 +1,17 @@
-// GoRide trip events — each object is a single, valid message body for the
+// GoRide trip events - each object is a single, valid message body for the
 // rides topic.
 //
 // The topic has an Avro schema with JSON encoding, so the message you publish
 // (from the console Messages tab OR via gcloud) must match these fields exactly:
 // event_id, user_id, driver_id, event_type (string), fare (number),
 // city (string), timestamp (string). A typo or missing field is REJECTED at
-// publish time — that's the schema doing its job. Copy ONE object (the inner
+// publish time - that's the schema doing its job. Copy ONE object (the inner
 // {...}) as the message body.
 //
-// Cast: evt_maya is THE live event — Maya (u_456), $24.50 across San Francisco,
+// Cast: evt_maya is THE live event - Maya (u_456), $24.50 across San Francisco,
 // published on stage in Scene 3. The evt_1xxx events are "earlier rides tonight,"
 // pre-baked during setup so the BigQuery dashboard already has traffic.
-// evt_bad is the buggy-partner-app event for Scene 6 — fare as text, so the
+// evt_bad is the buggy-partner-app event for Scene 6 - fare as text, so the
 // schema rejects it. That one SHOULD fail.
 
 [

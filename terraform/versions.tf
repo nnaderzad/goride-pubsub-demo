@@ -16,5 +16,5 @@ terraform {
 provider "google" {
   project = var.project != "" ? var.project : null # null → provider reads GOOGLE_CLOUD_PROJECT
   region  = var.location
-  # No credentials block — Cloud Shell supplies Application Default Credentials automatically.
+  # No credentials block - Cloud Shell supplies Application Default Credentials automatically.
 }

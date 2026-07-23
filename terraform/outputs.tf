@@ -18,7 +18,7 @@ output "bigquery_table" {
 }
 
 # ---------------------------------------------------------------------------
-# Console deep-links — open these on stage; they are the demo surface.
+# Console deep-links - open these on stage; they are the demo surface.
 # ---------------------------------------------------------------------------
 output "topic_console_url" {
   description = "Open the rides topic (use the Messages tab to publish live)."
