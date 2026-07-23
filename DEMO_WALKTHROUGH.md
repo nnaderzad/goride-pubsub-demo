@@ -34,6 +34,12 @@ GoRide app ──▶  rides topic  ──┬─▶ match-sub     ▶ Dispatch
 **billing-sub**, and **BigQuery**. Keep `data/sample_events.json` open to copy
 payloads from, and `commands.sh` handy — every scene has a CLI fallback.
 
+> **Prefer code over clicks?** The same six scenes exist as a runnable notebook —
+> [`notebook/goride_demo.ipynb`](notebook/goride_demo.ipynb) — using the
+> `google-cloud-pubsub` client library (publish, pull, streaming callback + ack,
+> BigQuery query, schema rejection). Best surface for teaching the client API;
+> the console beats below are best for showing the topology. Mix freely.
+
 ---
 
 ## Run of show

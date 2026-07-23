@@ -36,6 +36,7 @@ notifications, ML) is just one more subscription — zero changes upstream.
 |------|------------|
 | [`SETUP.md`](SETUP.md) | **Do this first.** Pre-talk setup: enable APIs, `terraform apply`, pre-bake "earlier rides," verify. |
 | [`DEMO_WALKTHROUGH.md`](DEMO_WALKTHROUGH.md) | The story — six scenes following Maya's ride, driven in the console, with CLI fallbacks. |
+| [`notebook/goride_demo.ipynb`](notebook/goride_demo.ipynb) | The same six scenes as a **runnable notebook** using the `google-cloud-pubsub` client library — publish, pull, callback + ack, BigQuery query, schema rejection. The teaching-friendly surface. |
 | [`commands.sh`](commands.sh) | Every `gcloud`/`bq` command in order — the CLI fallback for each scene. |
 | `terraform/` | All the infrastructure as code: topic + schema, three subscriptions, dead-letter, BigQuery dataset/table, IAM. |
 | `data/sample_events.json` | The cast's event payloads — Maya's live event, the earlier rides, and the deliberately-broken one. |
