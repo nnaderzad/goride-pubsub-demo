@@ -2,12 +2,13 @@
   "type": "record",
   "name": "TripCompleted",
   "fields": [
-    { "name": "event_id",   "type": "string" },
-    { "name": "user_id",    "type": "string" },
-    { "name": "driver_id",  "type": "string" },
-    { "name": "event_type", "type": "string" },
-    { "name": "fare",       "type": "double" },
-    { "name": "city",       "type": "string" },
-    { "name": "timestamp",  "type": "string" }
+    { "name": "event_id",    "type": "string" },
+    { "name": "user_id",     "type": "string" },
+    { "name": "rider_email", "type": "string" },
+    { "name": "driver_id",   "type": "string" },
+    { "name": "event_type",  "type": "string" },
+    { "name": "fare",        "type": "double" },
+    { "name": "city",        "type": "string" },
+    { "name": "timestamp",   "type": "string" }
   ]
 }

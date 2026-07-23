@@ -22,7 +22,8 @@ live scene has a `gcloud`/`bq` CLI fallback.
 GoRide app ──>  rides topic  ──┬─> match-sub     > Dispatch          (pull)
    (Maya)      (Avro schema)   ├─> billing-sub   > Finance           (pull)
                                └─> analytics-sub > BigQuery/data team (export)
-                                                   rides_analytics.trip_events
+                                   (SMT masks     rides_analytics.trip_events
+                                    rider_email)
 
         Poison message on match-sub ──> rides-dead-letter ──> dead-letter-sub
 ```
@@ -38,7 +39,7 @@ notifications, ML) is just one more subscription - zero changes upstream.
 | [`DEMO_WALKTHROUGH.md`](DEMO_WALKTHROUGH.md) | The story - six scenes following Maya's ride, driven in the console, with CLI fallbacks. |
 | [`notebook/goride_demo.ipynb`](notebook/goride_demo.ipynb) | The same six scenes as a **runnable notebook** using the `google-cloud-pubsub` client library - publish, pull, callback + ack, BigQuery query, schema rejection. The teaching-friendly surface. |
 | [`commands.sh`](commands.sh) | Every `gcloud`/`bq` command in order - the CLI fallback for each scene. |
-| `terraform/` | All the infrastructure as code: topic + schema, three subscriptions, dead-letter, BigQuery dataset/table, IAM. |
+| `terraform/` | All the infrastructure as code: topic + schema, three subscriptions, a Single Message Transform (`transforms/mask_email.js`) on the analytics subscription, dead-letter, BigQuery dataset/table, IAM. |
 | `data/sample_events.json` | The cast's event payloads - Maya's live event, the earlier rides, and the deliberately-broken one. |
 
 ## How the story maps to the deck
@@ -49,7 +50,7 @@ notifications, ML) is just one more subscription - zero changes upstream.
 | 2 | Tour of GoRide's machinery | Publisher → Topic → Subscription → Subscriber; schemas |
 | 3 | Maya's trip completes; you publish it live | Asynchronous publish - producer never waits |
 | 4 | Dispatch and Finance each pull their own copy | Fan-out vs. load-balancing; acking |
-| 5 | The data team already sees her ride in BigQuery | Export delivery; the "BigQuery hop" |
+| 5 | The data team already sees her ride in BigQuery - with her email masked | Export delivery; the "BigQuery hop"; Single Message Transforms |
 | 6 | A corrupted event bounces; a poison message is quarantined | Schemas, dead-letter, retry - production features |
 
 ## Quick start

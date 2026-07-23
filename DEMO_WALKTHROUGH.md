@@ -18,21 +18,25 @@ every part of the company react to a single published event.
 | **Dispatch** | Needs to assign drivers the moment trips happen | `match-sub` |
 | **Finance** | Needs to charge her card - independently of dispatch | `billing-sub` |
 | **The data team** | Needs live dashboards, not last night's batch job | `analytics-sub` → BigQuery |
+| **Maya's email address** | PII - finance needs it for receipts, the warehouse must never store it | A **Single Message Transform** on `analytics-sub` masks it |
 | **A buggy partner app** | Sends corrupted events | The schema bounces it |
 | **A poison message** | Could jam the Friday-night rush | The dead-letter topic catches it |
 
 ```
 GoRide app ──>  rides topic  ──┬─> match-sub     > Dispatch
-   (Maya)      (Avro schema)   ├─> billing-sub   > Finance
+   (Maya)      (Avro schema)   ├─> billing-sub   > Finance (sees full email)
                                └─> analytics-sub > BigQuery (data team)
+                                   (SMT masks rider_email in-flight)
 
         Poison message on match-sub ──> rides-dead-letter
 ```
 
 **Before you start:** finish [`SETUP.md`](SETUP.md). Have four console tabs open
 (URLs are in the `terraform apply` output): the **rides topic**, **match-sub**,
-**billing-sub**, and **BigQuery**. Keep `data/sample_events.json` open to copy
-payloads from, and `commands.sh` handy - every scene has a CLI fallback.
+**billing-sub**, and **BigQuery** - plus an optional fifth, **analytics-sub**,
+if you want the Test-transform beat in Scene 5. Keep `data/sample_events.json`
+open to copy payloads from, and `commands.sh` handy - every scene has a CLI
+fallback.
 
 > **Prefer code over clicks?** The same six scenes exist as a runnable notebook -
 > [`notebook/goride_demo.ipynb`](notebook/goride_demo.ipynb) - using the
@@ -50,7 +54,7 @@ payloads from, and `commands.sh` handy - every scene has a CLI fallback.
 | 2 | 1:30 | Tour of the machinery | Topic, subscriptions, schema |
 | 3 | 1:00 | Maya's trip completes - publish it live | Async publish |
 | 4 | 2:00 | Dispatch and Finance both react | Fan-out |
-| 5 | 1:30 | The data team already sees it | BigQuery, real-time |
+| 5 | 2:00 | The data team already sees it - minus Maya's email | BigQuery, real-time; Single Message Transforms |
 | 6 | 1:00 | Two things go wrong - nothing breaks | Schema + dead-letter |
 
 ---
@@ -88,9 +92,10 @@ console features:
   Notice what's *not* here: any mention of them in the publisher. The app has no
   idea these three exist."
 - **The Schema** attached to the topic - "The one thing GoRide *does* enforce
-  company-wide: every trip event must look like this - seven fields, `fare` is a
+  company-wide: every trip event must look like this - eight fields, `fare` is a
   number. It's the data contract between teams. We'll see it earn its keep in the
-  final scene."
+  final scene. And notice `rider_email` in there - Maya's PII rides along in the
+  event. Keep an eye on that field."
 
 > **Concept landed:** Publisher → Topic → Subscription → Subscriber, as real
 > infrastructure - with the producer fully decoupled from every consumer.
@@ -106,7 +111,7 @@ On the **rides topic** page → **Messages** tab → **Publish message**. Paste
 Maya's event (from `data/sample_events.json`, `event_id` `evt_maya`):
 
 ```json
-{"event_id":"evt_maya","user_id":"u_456","driver_id":"d_789","event_type":"trip_completed","fare":24.50,"city":"San Francisco","timestamp":"2026-07-22T22:15:00Z"}
+{"event_id":"evt_maya","user_id":"u_456","rider_email":"maya@example.com","driver_id":"d_789","event_type":"trip_completed","fare":24.50,"city":"San Francisco","timestamp":"2026-07-22T22:15:00Z"}
 ```
 
 Click **Publish**.
@@ -132,9 +137,10 @@ Click **Publish**.
 **Now visit finance.** Switch to the **billing-sub** tab → **Pull**.
 
 > "And here is the *same event, again* - finance's **own copy**. They'll charge
-> her card and send the receipt. Finance never talked to dispatch. Neither knows
-> the other pulled it. If finance's systems were down for an hour, their copy
-> would wait here - and dispatch wouldn't notice a thing."
+> her card and send the receipt to **maya@example.com** - note they see her full
+> email address, and they need to. Finance never talked to dispatch. Neither
+> knows the other pulled it. If finance's systems were down for an hour, their
+> copy would wait here - and dispatch wouldn't notice a thing."
 
 > **Concepts landed:**
 > - **Fan-out** - *every subscription gets its own copy.* One publish, N
@@ -151,7 +157,7 @@ Click **Publish**.
 
 ---
 
-### Scene 5 - The data team already sees it (~1:30)
+### Scene 5 - The data team already sees it - minus Maya's email (~2:00)
 
 > "While we were visiting dispatch and finance, the third subscriber never even
 > needed a person. Let's check the data team's warehouse."
@@ -159,7 +165,7 @@ Click **Publish**.
 Switch to the **BigQuery** tab and run (also in `terraform output run_this_query`):
 
 ```sql
-SELECT event_type, city, fare, timestamp
+SELECT event_type, rider_email, city, fare, timestamp
 FROM `rides_analytics.trip_events`
 ORDER BY timestamp DESC
 LIMIT 20;
@@ -174,9 +180,28 @@ LIMIT 20;
 If `evt_maya` hasn't landed yet, re-run the query - it streams in within seconds.
 (And this is *why we pre-baked rows*: the payoff never depends on live timing.)
 
-> **Concept landed:** the third delivery type - **export** - and the deck's
-> "BigQuery hop": the same event that drove operations also feeds analytics, in
-> real time.
+**Then point at the `rider_email` column.**
+
+> "But look at her email: **`m***@example.com`**. Two minutes ago, finance pulled
+> this exact same published message and saw `maya@example.com` in full. That's a
+> **Single Message Transform** - the `remove_email` idea from the deck, live. A
+> small JavaScript function attached to `analytics-sub` runs *inside Pub/Sub*,
+> on each message, on its way to BigQuery. Finance's copy is untouched; the
+> warehouse never stores her PII. Before SMTs, this took a Dataflow job sitting
+> between Pub/Sub and BigQuery. Now it's six lines of JavaScript and zero
+> infrastructure - and it's per-subscription, so every consumer gets exactly the
+> view it should have."
+
+*(Optional, if time allows: open the **analytics-sub** page - URL is in
+`terraform output analytics_sub_console_url` - and show the **Message
+transforms** section. The **Test transform** button lets you paste a sample
+message and see the masked output live, without publishing anything.)*
+
+> **Concepts landed:**
+> - the third delivery type - **export** - and the deck's "BigQuery hop": the
+>   same event that drove operations also feeds analytics, in real time.
+> - **Single Message Transforms** - lightweight per-message transforms inside
+>   Pub/Sub itself; the canonical use: PII masking on the way to storage.
 
 ---
 
@@ -188,7 +213,7 @@ If `evt_maya` hasn't landed yet, re-run the query - it streams in within seconds
 `fare` as text." Publish this (Messages tab, or `commands.sh` optional scene):
 
 ```json
-{"event_id":"evt_bad","user_id":"u_999","driver_id":"d_000","event_type":"trip_completed","fare":"not-a-number","city":"Nowhere","timestamp":"2026-07-22T22:20:00Z"}
+{"event_id":"evt_bad","user_id":"u_999","rider_email":"partner-bot@example.com","driver_id":"d_000","event_type":"trip_completed","fare":"not-a-number","city":"Nowhere","timestamp":"2026-07-22T22:20:00Z"}
 ```
 
 → **Rejected at publish time.**
@@ -213,9 +238,10 @@ the config on `match-sub`):
 
 > "One tap. **One publish.** Dispatch reacted, finance reacted, the dashboard
 > updated - three departments, each at their own pace, each with their own copy.
-> A corrupted event got bounced and a poison message got quarantined, and none of
-> it touched Maya's experience. The GoRide app knows about **none** of this - it
-> published once, and everything reacted.
+> Maya's email reached the one team that needs it and was masked for the one that
+> doesn't. A corrupted event got bounced and a poison message got quarantined,
+> and none of it touched Maya's experience. The GoRide app knows about **none**
+> of this - it published once, and everything reacted.
 >
 > That's Cloud Pub/Sub: **publish once. Let everything react.**"
 
@@ -231,7 +257,7 @@ cd terraform && terraform destroy   # type "yes"
 
 - **Live publish is slow / rejected:** fall back to the pre-baked rows in
   BigQuery (Scene 5) - they're already there. For a rejected publish, check the
-  JSON matches the schema (all seven fields, `fare` numeric).
+  JSON matches the schema (all eight fields, `fare` numeric).
 - **A Pull shows nothing:** the message may have been acked on a previous run.
   Publish Maya's event again with a new `event_id` and pull again.
 - **Network dies:** play the screen recording you captured during setup.

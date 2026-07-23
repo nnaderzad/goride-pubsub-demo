@@ -1,9 +1,10 @@
 [
-  { "name": "event_id",   "type": "STRING",  "mode": "NULLABLE" },
-  { "name": "user_id",    "type": "STRING",  "mode": "NULLABLE" },
-  { "name": "driver_id",  "type": "STRING",  "mode": "NULLABLE" },
-  { "name": "event_type", "type": "STRING",  "mode": "NULLABLE" },
-  { "name": "fare",       "type": "FLOAT",   "mode": "NULLABLE" },
-  { "name": "city",       "type": "STRING",  "mode": "NULLABLE" },
-  { "name": "timestamp",  "type": "STRING",  "mode": "NULLABLE" }
+  { "name": "event_id",    "type": "STRING",  "mode": "NULLABLE" },
+  { "name": "user_id",     "type": "STRING",  "mode": "NULLABLE" },
+  { "name": "rider_email", "type": "STRING",  "mode": "NULLABLE" },
+  { "name": "driver_id",   "type": "STRING",  "mode": "NULLABLE" },
+  { "name": "event_type",  "type": "STRING",  "mode": "NULLABLE" },
+  { "name": "fare",        "type": "FLOAT",   "mode": "NULLABLE" },
+  { "name": "city",        "type": "STRING",  "mode": "NULLABLE" },
+  { "name": "timestamp",   "type": "STRING",  "mode": "NULLABLE" }
 ]

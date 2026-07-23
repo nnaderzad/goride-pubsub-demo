@@ -33,14 +33,16 @@ cd ..
 #    BigQuery table already has traffic before Maya's live ride. Each --message
 #    must conform to the Avro schema (see data/sample_events.json).
 gcloud pubsub topics publish "$TOPIC" --project="$PROJECT" \
-  --message='{"event_id":"evt_1001","user_id":"u_910","driver_id":"d_233","event_type":"trip_completed","fare":8.75,"city":"Oakland","timestamp":"2026-07-22T21:48:30Z"}'
+  --message='{"event_id":"evt_1001","user_id":"u_910","rider_email":"jordan@example.com","driver_id":"d_233","event_type":"trip_completed","fare":8.75,"city":"Oakland","timestamp":"2026-07-22T21:48:30Z"}'
 gcloud pubsub topics publish "$TOPIC" --project="$PROJECT" \
-  --message='{"event_id":"evt_1002","user_id":"u_128","driver_id":"d_512","event_type":"trip_completed","fare":41.20,"city":"San Jose","timestamp":"2026-07-22T21:55:05Z"}'
+  --message='{"event_id":"evt_1002","user_id":"u_128","rider_email":"sam@example.com","driver_id":"d_512","event_type":"trip_completed","fare":41.20,"city":"San Jose","timestamp":"2026-07-22T21:55:05Z"}'
 
 # 4. Confirm rows landed (BigQuery subscriptions stream continuously; give it a
-#    few seconds). If this returns rows, your payoff is safe.
+#    few seconds). If this returns rows, your payoff is safe. The rider_email
+#    values should arrive MASKED (j***@example.com) - that's the SMT on
+#    analytics-sub working, verified before the talk.
 bq query --project_id="$PROJECT" --use_legacy_sql=false \
-  "SELECT event_type, city, fare, timestamp
+  "SELECT event_type, rider_email, city, fare, timestamp
    FROM \`$PROJECT.$DATASET.$TABLE\` ORDER BY timestamp DESC LIMIT 20"
 
 # ---------------------------------------------------------------------------
@@ -50,7 +52,7 @@ bq query --project_id="$PROJECT" --use_legacy_sql=false \
 
 # SCENE 3 - Maya's trip completes: publish HER event, live. You are the app.
 gcloud pubsub topics publish "$TOPIC" --project="$PROJECT" \
-  --message='{"event_id":"evt_maya","user_id":"u_456","driver_id":"d_789","event_type":"trip_completed","fare":24.50,"city":"San Francisco","timestamp":"2026-07-22T22:15:00Z"}'
+  --message='{"event_id":"evt_maya","user_id":"u_456","rider_email":"maya@example.com","driver_id":"d_789","event_type":"trip_completed","fare":24.50,"city":"San Francisco","timestamp":"2026-07-22T22:15:00Z"}'
 
 # SCENE 4 - Dispatch and Finance both react: pull ONE copy from EACH
 # subscription. The SAME event comes back on both - fan-out, each department
@@ -58,10 +60,19 @@ gcloud pubsub topics publish "$TOPIC" --project="$PROJECT" \
 gcloud pubsub subscriptions pull match-sub   --project="$PROJECT" --auto-ack --limit=1
 gcloud pubsub subscriptions pull billing-sub --project="$PROJECT" --auto-ack --limit=1
 
-# SCENE 5 - The data team already sees it: Maya's ride is a row in BigQuery.
+# SCENE 5 - The data team already sees it: Maya's ride is a row in BigQuery -
+# and rider_email reads m***@example.com. Finance saw maya@example.com in full
+# (Scene 4); the SMT on analytics-sub masked the warehouse's copy in-flight.
 bq query --project_id="$PROJECT" --use_legacy_sql=false \
-  "SELECT event_type, city, fare, timestamp
+  "SELECT event_type, rider_email, city, fare, timestamp
    FROM \`$PROJECT.$DATASET.$TABLE\` ORDER BY timestamp DESC LIMIT 20"
+
+# SCENE 5 (optional) - show the transform itself: the maskEmail JavaScript UDF
+# attached to analytics-sub. (In the console: subscription detail page,
+# "Message transforms" section - the Test transform button demos it without
+# publishing anything.)
+gcloud pubsub subscriptions describe analytics-sub --project="$PROJECT" \
+  --format="yaml(messageTransforms)"
 
 # SCENE 6 (optional live) - the buggy partner app: fare as text.
 # This SHOULD fail with an INVALID_ARGUMENT / schema mismatch error. That's the point.

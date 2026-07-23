@@ -6,6 +6,7 @@
 #   Trip service ──> rides topic ──┬─> match-sub     (pull)   Driver matching
 #                   (Avro schema)  ├─> billing-sub   (pull)   Payments
 #                                  └─> analytics-sub (BigQuery) ─> rides_analytics.trip_events
+#                                      (SMT masks rider_email in-flight)
 #
 #   Failed messages on match-sub ──> rides-dead-letter ──> rides-dead-letter-sub
 #
@@ -140,10 +141,23 @@ resource "google_project_iam_member" "pubsub_bq_metadata" {
 # analytics-sub - the BigQuery subscription. Pub/Sub delivers matching messages
 # directly into the table (deck: "Export" delivery type). use_topic_schema maps
 # the Avro fields to the table columns.
+#
+# The message_transforms block is the deck's Single Message Transform (SMT):
+# a JavaScript function that runs inside Pub/Sub on each message at delivery
+# time. Because it sits on THIS subscription (not the topic), billing-sub still
+# receives the full event - only the copy headed to BigQuery gets rider_email
+# masked. Before SMTs, this took a Dataflow job between Pub/Sub and BigQuery.
 # -----------------------------------------------------------------------------
 resource "google_pubsub_subscription" "analytics" {
   name  = "analytics-sub"
   topic = google_pubsub_topic.rides.id
+
+  message_transforms {
+    javascript_udf {
+      function_name = "maskEmail"
+      code          = file("${path.module}/transforms/mask_email.js")
+    }
+  }
 
   bigquery_config {
     table               = "${local.project_id}.${google_bigquery_dataset.analytics.dataset_id}.${google_bigquery_table.trip_events.table_id}"

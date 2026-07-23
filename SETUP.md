@@ -54,9 +54,10 @@ terraform apply        # review the plan, type "yes"
 ```
 
 This creates **one topic (with an Avro schema), three subscriptions
-(match-sub, billing-sub, analytics→BigQuery), a dead-letter topic + its
-subscription, a BigQuery dataset + table, and all the IAM** the Pub/Sub service
-agent needs. Takes ~30-60 seconds.
+(match-sub, billing-sub, analytics→BigQuery), a Single Message Transform on the
+analytics subscription (masks `rider_email` before BigQuery), a dead-letter
+topic + its subscription, a BigQuery dataset + table, and all the IAM** the
+Pub/Sub service agent needs. Takes ~30-60 seconds.
 
 When it finishes, Terraform prints the console URLs and helper commands. **Keep
 this output** - it's your demo cheat sheet.
@@ -80,9 +81,9 @@ one happens live, in Scene 3:
 ```bash
 cd ..   # back to repo root
 gcloud pubsub topics publish rides \
-  --message='{"event_id":"evt_1001","user_id":"u_910","driver_id":"d_233","event_type":"trip_completed","fare":8.75,"city":"Oakland","timestamp":"2026-07-22T21:48:30Z"}'
+  --message='{"event_id":"evt_1001","user_id":"u_910","rider_email":"jordan@example.com","driver_id":"d_233","event_type":"trip_completed","fare":8.75,"city":"Oakland","timestamp":"2026-07-22T21:48:30Z"}'
 gcloud pubsub topics publish rides \
-  --message='{"event_id":"evt_1002","user_id":"u_128","driver_id":"d_512","event_type":"trip_completed","fare":41.20,"city":"San Jose","timestamp":"2026-07-22T21:55:05Z"}'
+  --message='{"event_id":"evt_1002","user_id":"u_128","rider_email":"sam@example.com","driver_id":"d_512","event_type":"trip_completed","fare":41.20,"city":"San Jose","timestamp":"2026-07-22T21:55:05Z"}'
 ```
 
 ---
@@ -96,10 +97,14 @@ gcloud pubsub subscriptions pull billing-sub --limit=1
 
 # BigQuery has rows (may take a few seconds after publishing):
 bq query --use_legacy_sql=false \
-  "SELECT event_type, city, fare FROM \`rides_analytics.trip_events\` ORDER BY timestamp DESC LIMIT 5"
+  "SELECT event_type, rider_email, city, fare FROM \`rides_analytics.trip_events\` ORDER BY timestamp DESC LIMIT 5"
 ```
 
 If the pulls return a message and the query returns rows, **you're ready.**
+Check the `rider_email` column while you're here: it should read
+`j***@example.com` / `s***@example.com` - masked. That's the Single Message
+Transform on `analytics-sub` verified working before the talk (the pulls above
+show the full addresses, which is the Scene 5 contrast).
 
 > **Do a full dry run shortly before the talk**, and keep a **screen recording**
 > of a successful run as a fallback in case the venue network dies mid-demo.
