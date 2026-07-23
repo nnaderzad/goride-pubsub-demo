@@ -35,6 +35,7 @@ notifications, ML) is just one more subscription — zero changes upstream.
 | Path | What it is |
 |------|------------|
 | [`SETUP.md`](SETUP.md) | **Do this first.** Pre-talk setup: enable APIs, `terraform apply`, pre-bake "earlier rides," verify. |
+| [`SETUP_WITHOUT_TERRAFORM.md`](SETUP_WITHOUT_TERRAFORM.md) | The same infrastructure with plain `gcloud`/`bq` — for anyone who'd rather skip Terraform. |
 | [`DEMO_WALKTHROUGH.md`](DEMO_WALKTHROUGH.md) | The story — six scenes following Maya's ride, driven in the console, with CLI fallbacks. |
 | [`commands.sh`](commands.sh) | Every `gcloud`/`bq` command in order — the CLI fallback for each scene. |
 | `terraform/` | All the infrastructure as code: topic + schema, three subscriptions, dead-letter, BigQuery dataset/table, IAM. |
