@@ -3,7 +3,7 @@
 # This is a REFERENCE to copy from, not a script to run blindly.
 # The infrastructure itself is created by Terraform (see terraform/); these are
 # the gcloud/bq commands for pre-baking, the CLI fallback for each live scene,
-# and verification. Scene numbers match DEMO_WALKTHROUGH.md.
+# and verification. Scene numbers match the notebook's scenes.
 
 set -euo pipefail
 

@@ -36,7 +36,6 @@ notifications, ML) is just one more subscription - zero changes upstream.
 | Path | What it is |
 |------|------------|
 | [`SETUP.md`](SETUP.md) | **Do this first.** Pre-talk setup: enable APIs, `terraform apply`, pre-bake "earlier rides," verify. |
-| [`DEMO_WALKTHROUGH.md`](DEMO_WALKTHROUGH.md) | The story - six scenes following Maya's ride, driven in the console, with CLI fallbacks. |
 | [`notebook/goride_demo.ipynb`](notebook/goride_demo.ipynb) | The same six scenes as a **runnable notebook** using the `google-cloud-pubsub` client library - publish, pull, callback + ack, BigQuery query, schema rejection. The teaching-friendly surface. |
 | [`commands.sh`](commands.sh) | Every `gcloud`/`bq` command in order - the CLI fallback for each scene. |
 | `terraform/` | All the infrastructure as code: topic + schema, three subscriptions, a Single Message Transform (`transforms/mask_email.js`) on the analytics subscription, dead-letter, BigQuery dataset/table, IAM. |
@@ -64,7 +63,7 @@ gcloud services enable pubsub.googleapis.com bigquery.googleapis.com
 cd terraform && terraform init && terraform apply   # type "yes"
 
 # 3. Read the outputs (console URLs + publish command), then follow SETUP.md
-#    step 4 onward to pre-bake, and DEMO_WALKTHROUGH.md to run the talk.
+#    step 4 onward to pre-bake, and the notebook to run the story.
 ```
 
 Cost is effectively **~$0** (a few tiny messages, a few BigQuery rows - inside the

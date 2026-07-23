@@ -19,3 +19,6 @@ terraform.rc
 
 # Local environment (project ID etc.) - never committed
 .env
+
+# Presenter script - kept local, not published
+DEMO_WALKTHROUGH.md
